@@ -9,6 +9,7 @@ import re
 
 
 REQUIRED_FILES = [
+    "index.md",
     "business-model.md",
     "domain-rules.md",
     "user-flows.md",
@@ -22,6 +23,7 @@ PLACEHOLDER_MARKERS = [
     "- Flow:\n",
     "- Concept:\n",
     "- Teams involved:\n",
+    "- Keywords:\n",
 ]
 
 

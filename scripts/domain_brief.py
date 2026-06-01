@@ -17,6 +17,7 @@ CONTEXT_CANDIDATES = [
 ]
 
 REQUIRED_FILES = [
+    "index.md",
     "business-model.md",
     "domain-rules.md",
     "user-flows.md",
@@ -113,6 +114,7 @@ def pick(lines: Iterable[str], limit: int = 5) -> list[str]:
 
 
 def render_brief(task: str, context_dir: Path, context: dict[str, list[str]]) -> str:
+    index = ranked_lines(task, context["index.md"], limit=8)
     rules = ranked_lines(task, context["domain-rules.md"])
     flows = ranked_lines(task, context["user-flows.md"] + context["operational-context.md"])
     code = ranked_lines(task, context["code-map.md"])
@@ -130,6 +132,10 @@ def render_brief(task: str, context_dir: Path, context: dict[str, list[str]]) ->
 ## Relevant Business Context
 
 {bullet_block(business)}
+
+## Selected Context From Index
+
+{bullet_block(index)}
 
 ## Relevant Business Rules
 

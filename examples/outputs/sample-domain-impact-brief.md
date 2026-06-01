@@ -10,6 +10,15 @@
 - Payment trust is a value-critical outcome.
 - Settled paid appointments require staff-assisted cancellation.
 
+## Selected Context From Index
+
+- Area: paid appointment cancellation.
+- Keywords: cancel, cancellation, paid, settled, appointment, refund, patient, staff override.
+- Read: `domain-rules.md`, `user-flows.md`, `operational-context.md`, `code-map.md`.
+- Code: `app/appointments/cancel.ts`, `app/payments/webhook.ts`, `app/notifications/staff.ts`.
+- Risk: patient self-service cancellation can bypass refund policy and audit requirements.
+- Required brief topics: settlement state, cancellation request state, staff review, audit event, refund side effect.
+
 ## Relevant Business Rules
 
 - One appointment can have at most one active payment intent.

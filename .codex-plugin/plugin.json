@@ -1,13 +1,13 @@
 {
   "name": "domain-guardian",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Keeps AI coding agents grounded in project-specific business rules, user flows, and operational context.",
   "author": {
     "name": "GreedDK",
     "url": "https://github.com/GreedDK"
   },
-  "homepage": "https://github.com/GreedDK/domain-guardian",
-  "repository": "https://github.com/GreedDK/domain-guardian",
+  "homepage": "https://github.com/Greeddk/domain-guardian",
+  "repository": "https://github.com/Greeddk/domain-guardian",
   "license": "MIT",
   "keywords": [
     "codex",
@@ -25,6 +25,8 @@
     "category": "Productivity",
     "capabilities": [
       "Domain rule onboarding",
+      "Indexed context reading",
+      "Diff risk analysis",
       "Business-flow-aware code review",
       "Context completeness checks"
     ],

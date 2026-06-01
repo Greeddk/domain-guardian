@@ -19,7 +19,9 @@ small test slice while damaging the business behavior the code was meant to prot
 
 - Captures the business model, domain rules, user flows, operational constraints, and code map.
 - Guides the agent to ask onboarding questions when the context is missing or thin.
+- Uses a project index to find the smallest relevant context before reading full files.
 - Prompts the agent to create a Domain Impact Brief before domain-sensitive code edits.
+- Analyzes diffs for domain-risk signals and can require a valid brief.
 - Reviews diffs against the rules that the code exists to protect.
 - Encourages context updates whenever new rules are discovered.
 
@@ -28,7 +30,7 @@ small test slice while damaging the business behavior the code was meant to prot
 Use this repository as a local plugin source:
 
 ```bash
-git clone https://github.com/GreedDK/domain-guardian.git
+git clone https://github.com/Greeddk/domain-guardian.git
 ```
 
 Then install or load the cloned `domain-guardian` directory as a Codex plugin. The plugin manifest lives at:
@@ -66,6 +68,23 @@ Create a first-pass brief for a planned change:
 python3 /path/to/domain-guardian/scripts/domain_brief.py \
   --task "Change cancellation rules for paid bookings" \
   --knowledge-dir .domain-guardian
+```
+
+Analyze a diff before review or merge:
+
+```bash
+git diff main...HEAD > /tmp/change.diff
+python3 /path/to/domain-guardian/scripts/analyze_diff.py \
+  --diff-file /tmp/change.diff \
+  --knowledge-dir .domain-guardian \
+  --require-brief \
+  --brief docs/domain-impact-brief.md
+```
+
+Validate a brief directly:
+
+```bash
+python3 /path/to/domain-guardian/scripts/check_brief.py docs/domain-impact-brief.md
 ```
 
 Try the included example:
@@ -106,8 +125,9 @@ python3 scripts/check_context.py .domain-guardian
 Domain Guardian teaches the agent four modes:
 
 - **Onboarding mode:** ask one focused question at a time and write answers into context files.
+- **Indexed reading mode:** read `index.md` first, then only the linked context files for the task.
 - **Pre-change mode:** produce a Domain Impact Brief before editing domain-sensitive code.
-- **Code review mode:** review diffs for business-rule regressions.
+- **Code review mode:** review diffs for business-rule regressions and missing briefs.
 - **Context update mode:** add newly discovered rules, exceptions, and code paths back to memory.
 
 The recommended brief format:
@@ -142,6 +162,8 @@ domain-guardian/
   scripts/
     bootstrap_context.py
     check_context.py
+    check_brief.py
+    analyze_diff.py
     domain_brief.py
     init_project_context.py
   tests/
@@ -175,6 +197,16 @@ python3 scripts/check_context.py knowledge
 The starter `knowledge/` directory is intentionally incomplete, so `check_context.py knowledge`
 should report `NEEDS WORK` until a real project has answered the onboarding questions.
 
+## Version Notes
+
+### v0.2
+
+- Adds `index.md` as the first-read map for domain context.
+- Adds `scripts/analyze_diff.py` for diff-level domain risk reports.
+- Adds `scripts/check_brief.py` for Domain Impact Brief validation.
+- Updates brief generation to include selected Index context.
+- Expands tests and CI around indexed context, diff analysis, and brief checks.
+
 ## Release Checklist
 
 - Plugin manifest validates.
@@ -183,6 +215,8 @@ should report `NEEDS WORK` until a real project has answered the onboarding ques
 - `scripts/bootstrap_context.py` supports question-based onboarding.
 - `scripts/check_context.py` reports sparse starter templates as `NEEDS WORK`.
 - `scripts/domain_brief.py` generates a first-pass brief.
+- `scripts/analyze_diff.py` reports domain risk from changed files and diff text.
+- `scripts/check_brief.py` can fail a review when a brief is missing or too weak.
 - Tests pass with `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests`.
 
 ## Known Limitations

@@ -19,6 +19,7 @@ Use this skill when a user asks to:
 
 Read these files from the plugin or project copy before making domain-sensitive changes:
 
+- `knowledge/index.md`
 - `knowledge/business-model.md`
 - `knowledge/domain-rules.md`
 - `knowledge/user-flows.md`
@@ -26,6 +27,15 @@ Read these files from the plugin or project copy before making domain-sensitive 
 - `knowledge/code-map.md`
 
 If the current repository has its own `.domain-guardian/` or `docs/domain-guardian/` directory, prefer that project-local knowledge over the plugin's starter templates. If neither exists, ask to initialize one or use `scripts/init_project_context.py`.
+
+## Indexed Reading
+
+Start with `index.md`. Do not read every context file by default.
+
+1. Match the task, changed files, and diff terms against index entries.
+2. Read only the files listed in the best matching entry.
+3. If no entry matches but the change touches business logic, read `domain-rules.md`, `user-flows.md`, and `code-map.md`.
+4. Escalate to all context files only when the protected invariant is unclear, the task changes policy, or the code and context disagree.
 
 ## Operating Modes
 
@@ -75,7 +85,7 @@ You may use `scripts/domain_brief.py --task "<task>" --knowledge-dir <dir>` to c
 
 ### 3. Code Review Mode
 
-When reviewing a diff, lead with findings. Look for:
+When reviewing a diff, start with `scripts/analyze_diff.py` when a diff is available, then lead with findings. Look for:
 
 - removed validations,
 - broadened permissions,

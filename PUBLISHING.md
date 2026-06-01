@@ -3,7 +3,7 @@
 This repository is prepared for a public GitHub release on:
 
 ```text
-public/domain-guardian-v0.1
+public/domain-guardian-v0.2
 ```
 
 ## Release Preconditions
@@ -29,7 +29,7 @@ gh auth login -h github.com
 From the repository root:
 
 ```bash
-gh repo create GreedDK/domain-guardian \
+gh repo create Greeddk/domain-guardian \
   --public \
   --source=. \
   --remote=origin \
@@ -40,14 +40,14 @@ gh repo create GreedDK/domain-guardian \
 If the repository already exists:
 
 ```bash
-git push -u origin public/domain-guardian-v0.1
+git push -u origin public/domain-guardian-v0.2
 ```
 
 ## Verify Publication
 
 ```bash
-curl -I https://github.com/GreedDK/domain-guardian
-gh run list --repo GreedDK/domain-guardian --limit 5
+curl -I https://github.com/Greeddk/domain-guardian
+gh run list --repo Greeddk/domain-guardian --limit 5
 ```
 
 The public README should explain:

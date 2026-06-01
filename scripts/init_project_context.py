@@ -9,6 +9,7 @@ import shutil
 
 
 REQUIRED_FILES = [
+    "index.md",
     "business-model.md",
     "domain-rules.md",
     "user-flows.md",

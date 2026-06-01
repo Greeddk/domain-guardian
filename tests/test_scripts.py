@@ -9,6 +9,14 @@ import unittest
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
+SAMPLE_DIFF = """diff --git a/app/appointments/cancel.ts b/app/appointments/cancel.ts
+index 1111111..2222222 100644
+--- a/app/appointments/cancel.ts
++++ b/app/appointments/cancel.ts
+@@ -1,4 +1,4 @@
+- if (payment.state === "settled") return createCancellationRequest()
++ if (payment.state === "settled") return cancelAppointment()
+"""
 
 
 class ScriptTests(unittest.TestCase):
@@ -26,6 +34,7 @@ class ScriptTests(unittest.TestCase):
             result = self.run_script("scripts/init_project_context.py", tmp)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
             context_dir = Path(tmp) / ".domain-guardian"
+            self.assertTrue((context_dir / "index.md").exists())
             self.assertTrue((context_dir / "business-model.md").exists())
             self.assertTrue((context_dir / "domain-rules.md").exists())
 
@@ -82,6 +91,45 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertIn("settled paid appointment cannot be patient-cancelled directly", result.stdout)
         self.assertIn("cancellation request for settled appointment", result.stdout.lower())
+        self.assertIn("Selected Context From Index", result.stdout)
+
+    def test_check_brief_accepts_sample_brief(self) -> None:
+        result = self.run_script(
+            "scripts/check_brief.py",
+            "examples/outputs/sample-domain-impact-brief.md",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertIn("OK", result.stdout)
+
+    def test_analyze_diff_uses_index_and_requires_brief(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            diff_path = Path(tmp) / "change.diff"
+            diff_path.write_text(SAMPLE_DIFF, encoding="utf-8")
+            missing = self.run_script(
+                "scripts/analyze_diff.py",
+                "--diff-file",
+                str(diff_path),
+                "--knowledge-dir",
+                "examples/clinic-scheduling/.domain-guardian",
+                "--require-brief",
+            )
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn("paid appointment cancellation", missing.stdout)
+            self.assertIn("NEEDS WORK", missing.stdout)
+
+            with_brief = self.run_script(
+                "scripts/analyze_diff.py",
+                "--diff-file",
+                str(diff_path),
+                "--knowledge-dir",
+                "examples/clinic-scheduling/.domain-guardian",
+                "--require-brief",
+                "--brief",
+                "examples/outputs/sample-domain-impact-brief.md",
+            )
+            self.assertEqual(with_brief.returncode, 0, with_brief.stderr + with_brief.stdout)
+            self.assertIn("Risk level: HIGH", with_brief.stdout)
+            self.assertIn("OK: Domain Impact Brief", with_brief.stdout)
 
 
 if __name__ == "__main__":

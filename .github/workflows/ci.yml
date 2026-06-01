@@ -27,6 +27,9 @@ jobs:
       - name: Check filled example context
         run: python scripts/check_context.py examples/clinic-scheduling/.domain-guardian
 
+      - name: Check sample brief
+        run: python scripts/check_brief.py examples/outputs/sample-domain-impact-brief.md
+
       - name: Check starter context remains incomplete
         run: |
           if python scripts/check_context.py knowledge; then
