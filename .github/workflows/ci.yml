@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate manifest JSON
+        run: python -m json.tool .codex-plugin/plugin.json
+
+      - name: Compile scripts
+        run: python -m py_compile scripts/*.py
+
+      - name: Run tests
+        run: PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests
+
+      - name: Check filled example context
+        run: python scripts/check_context.py examples/clinic-scheduling/.domain-guardian
+
+      - name: Check starter context remains incomplete
+        run: |
+          if python scripts/check_context.py knowledge; then
+            echo "starter knowledge unexpectedly passed"
+            exit 1
+          fi
