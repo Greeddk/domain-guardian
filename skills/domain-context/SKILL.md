@@ -15,9 +15,9 @@ Use this skill when a user asks to:
 - review a diff for business-rule risk,
 - change logic related to pricing, permissions, eligibility, lifecycle states, matching, ranking, moderation, billing, fulfillment, notifications, data retention, or operational workflows.
 
-## Required Knowledge Files
+## Knowledge Files
 
-Read these files from the plugin or project copy before making domain-sensitive changes:
+These files make up the Domain Guardian knowledge base:
 
 - `knowledge/index.md`
 - `knowledge/business-model.md`
@@ -128,7 +128,8 @@ Do not overwrite a rule just because code disagrees with it. Treat disagreement 
 
 Before saying the task is complete, confirm:
 
-- the relevant knowledge files were read or the absence was reported,
+- `index.md` was checked first or its absence was reported,
+- the relevant indexed knowledge files were read or the absence was reported,
 - a Domain Impact Brief was produced for domain-sensitive code changes,
 - tests or review notes cover the protected business invariants,
 - any newly discovered rule was added or proposed as a knowledge update.

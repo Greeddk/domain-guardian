@@ -123,7 +123,6 @@ def render_report(
         reverse=True,
     )
     matches = [(score, entry) for score, entry in scored if score > 0][:5]
-    context = read_context(context_dir)
     level = risk_level(diff_text, files, matches)
 
     exit_code = 0
@@ -145,11 +144,16 @@ def render_report(
     else:
         lines.extend(["", "## Matched Index Entries", "", "- No index entry matched. Escalate to full context if this is business logic."])
 
-    task = " ".join(files) + " " + re.sub(r"[^a-zA-Z0-9_ ]+", " ", diff_text[:2000])
-    lines.extend(["", "## Relevant Rules", ""])
-    lines.extend(ranked_lines(task, context["domain-rules.md"], limit=6))
-    lines.extend(["", "## Relevant Flows And Operations", ""])
-    lines.extend(ranked_lines(task, context["user-flows.md"] + context["operational-context.md"], limit=6))
+    if level in {"HIGH", "MEDIUM"}:
+        context = read_context(context_dir)
+        task = " ".join(files) + " " + re.sub(r"[^a-zA-Z0-9_ ]+", " ", diff_text[:2000])
+        lines.extend(["", "## Relevant Rules", ""])
+        lines.extend(ranked_lines(task, context["domain-rules.md"], limit=6))
+        lines.extend(["", "## Relevant Flows And Operations", ""])
+        lines.extend(ranked_lines(task, context["user-flows.md"] + context["operational-context.md"], limit=6))
+    else:
+        lines.extend(["", "## Relevant Rules", "", "- Skipped for LOW risk: no index entry or domain-sensitive term matched."])
+        lines.extend(["", "## Relevant Flows And Operations", "", "- Skipped for LOW risk."])
     lines.extend(["", "## Recommended Gate", ""])
 
     if level in {"HIGH", "MEDIUM"}:

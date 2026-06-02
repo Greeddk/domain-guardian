@@ -103,10 +103,11 @@ Yes: this plugin is designed to ask the user questions and fill the knowledge ba
 The intended flow is:
 
 1. User says: "Use Domain Guardian" or "Onboard this project."
-2. The agent reads `knowledge/*.md`.
-3. If important sections are missing, the agent asks one focused question at a time.
-4. Each answer is summarized into the matching knowledge file.
-5. Before code changes, the agent produces a short Domain Impact Brief.
+2. The agent reads `index.md` first.
+3. The agent follows the matched Index entry to the smallest relevant context files.
+4. If important sections are missing, the agent asks one focused question at a time.
+5. Each answer is summarized into the matching knowledge file.
+6. Before code changes, the agent produces a short Domain Impact Brief.
 
 For a scripted first pass, run:
 
@@ -154,6 +155,7 @@ domain-guardian/
   skills/domain-context/SKILL.md
   docs/
   knowledge/
+    index.md
     business-model.md
     domain-rules.md
     user-flows.md

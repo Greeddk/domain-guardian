@@ -20,10 +20,16 @@ index 1111111..2222222 100644
 
 
 class ScriptTests(unittest.TestCase):
-    def run_script(self, *args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+    def run_script(
+        self,
+        *args: str,
+        cwd: Path | None = None,
+        input_text: str | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, *args],
             cwd=cwd or PLUGIN_ROOT,
+            input=input_text,
             text=True,
             capture_output=True,
             check=False,
@@ -130,6 +136,24 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(with_brief.returncode, 0, with_brief.stderr + with_brief.stdout)
             self.assertIn("Risk level: HIGH", with_brief.stdout)
             self.assertIn("OK: Domain Impact Brief", with_brief.stdout)
+
+    def test_analyze_diff_low_risk_does_not_dump_unrelated_rules(self) -> None:
+        low_risk = self.run_script(
+            "scripts/analyze_diff.py",
+            "--knowledge-dir",
+            "examples/clinic-scheduling/.domain-guardian",
+            input_text="""diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -1,1 +1,1 @@
+- Old wording
++ New wording
+""",
+        )
+        self.assertEqual(low_risk.returncode, 0, low_risk.stderr + low_risk.stdout)
+        self.assertIn("Risk level: LOW", low_risk.stdout)
+        self.assertIn("Skipped for LOW risk", low_risk.stdout)
+        self.assertNotIn("settled paid appointment cannot be patient-cancelled directly", low_risk.stdout)
 
 
 if __name__ == "__main__":
