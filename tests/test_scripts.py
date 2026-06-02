@@ -462,6 +462,23 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual(low_risk.returncode, 0, low_risk.stderr + low_risk.stdout)
         self.assertIn("Risk level: LOW", low_risk.stdout)
 
+    def test_analyze_diff_catches_camel_case_permission_terms(self) -> None:
+        medium_risk = self.run_script(
+            "scripts/analyze_diff.py",
+            "--knowledge-dir",
+            "examples/clinic-scheduling/.domain-guardian",
+            input_text="""diff --git a/app/support/queue.ts b/app/support/queue.ts
+--- a/app/support/queue.ts
++++ b/app/support/queue.ts
+@@ -1,2 +1,2 @@
+- assertRole(actor, ["operations_lead"])
++ assertRole(actor, ["support", "operations_lead"])
+  return listCancellationRequests()
+""",
+        )
+        self.assertEqual(medium_risk.returncode, 0, medium_risk.stderr + medium_risk.stdout)
+        self.assertIn("Risk level: MEDIUM", medium_risk.stdout)
+
     def test_domain_brief_low_confidence_does_not_invent_context(self) -> None:
         result = self.run_script(
             "scripts/domain_brief.py",

@@ -62,7 +62,8 @@ def normalize_token(token: str) -> str:
 
 
 def tokens(text: str) -> set[str]:
-    raw_tokens = re.findall(r"[a-zA-Z0-9_]+", text.lower())
+    split_text = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", text)
+    raw_tokens = re.findall(r"[a-zA-Z0-9_]+", split_text.lower())
     ignored = {
         "allow",
         "change",
