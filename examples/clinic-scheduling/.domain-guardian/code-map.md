@@ -16,6 +16,13 @@
   - API routes: `POST /payments/intent`, `POST /payments/webhook`.
   - Events/jobs: `payment.settled`, `payment.refunded`.
   - Tests: `payments/create-intent.test.ts`, `payments/webhook-idempotency.test.ts`.
+- Concept: staff cancellation notification.
+  - Files: `app/notifications/staff.ts`.
+  - Primary functions/classes: `notifyStaffCancellationRequest`.
+  - Database tables or collections: `notification_events`, `appointment_audit_events`.
+  - API routes: none.
+  - Events/jobs: `appointment.cancel_requested`.
+  - Tests: `notifications/staff-cancellation.test.ts`.
 
 ## Ownership Boundaries
 
@@ -29,6 +36,11 @@
   - Safe to change: logging and observability.
   - Requires review: payment intent creation, idempotency keys, webhook state transitions.
   - Related knowledge rules: one appointment can have at most one active payment intent.
+- Area: staff cancellation notification.
+  - Owner: operations lead.
+  - Safe to change: notification copy when timing and audit behavior stay unchanged.
+  - Requires review: notification trigger, staff review queue behavior, audit event.
+  - Related knowledge rules: settled paid appointment becomes a staff-reviewed cancellation request.
 
 ## High-Risk Code Paths
 

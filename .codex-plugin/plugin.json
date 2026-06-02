@@ -1,6 +1,6 @@
 {
   "name": "domain-guardian",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Keeps AI coding agents grounded in project-specific business rules, user flows, and operational context.",
   "author": {
     "name": "GreedDK",
@@ -19,19 +19,24 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Domain Guardian",
-    "shortDescription": "Surface context-blind code risks.",
-    "longDescription": "Domain Guardian gives Codex a structured project memory for business models, domain rules, critical user flows, operational context, and code ownership boundaries. It guides agents to ask onboarding questions, create a domain impact brief before edits, and review diffs against the rules behind the code.",
+    "shortDescription": "Ground code changes in business flow.",
+    "longDescription": "Domain Guardian gives AI coding agents a structured project memory for business models, domain rules, critical user flows, operational context, and code ownership boundaries. It prepares business-flow-aware task context before edits, guides agents to ask onboarding questions, creates domain impact briefs, and reviews diffs against the rules behind the code. It ships Codex plugin metadata and Claude Code slash command support.",
     "developerName": "GreedDK",
     "category": "Productivity",
     "capabilities": [
       "Domain rule onboarding",
       "Indexed context reading",
+      "Business-flow task context",
+      "Pilot outcome evaluation",
+      "Blind A/B review scoring",
+      "Claude Code slash commands",
       "Diff risk analysis",
       "Business-flow-aware code review",
       "Context completeness checks"
     ],
     "defaultPrompt": [
       "Use Domain Guardian before changing domain-sensitive code.",
+      "Prepare Domain Guardian pre-change context before editing code.",
       "Onboard this project with Domain Guardian.",
       "Review this diff with Domain Guardian."
     ]

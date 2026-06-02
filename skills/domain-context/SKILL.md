@@ -13,6 +13,7 @@ Use this skill when a user asks to:
 - explain or update business/domain context,
 - implement a feature or bug fix in a domain-heavy area,
 - review a diff for business-rule risk,
+- measure an A/B pilot comparing AI output with and without Domain Guardian,
 - change logic related to pricing, permissions, eligibility, lifecycle states, matching, ranking, moderation, billing, fulfillment, notifications, data retention, or operational workflows.
 
 ## Knowledge Files
@@ -70,7 +71,29 @@ The helper script `scripts/bootstrap_context.py` is intentionally simpler: it ca
 
 ### 2. Pre-Change Mode
 
-Before editing code, produce a Domain Impact Brief:
+Before editing domain-sensitive code, run the pre-change preparation command:
+
+```bash
+python3 scripts/prepare_change.py --task "<task>" --knowledge-dir <dir> --strict
+```
+
+This command prepares both the task context packet and a draft Domain Impact Brief. If it exits with `NEEDS CLARIFICATION`, do not edit domain-sensitive code until the missing business flow or policy owner is clarified.
+
+For a task context packet only, run:
+
+```bash
+python3 scripts/task_context.py --task "<task>" --knowledge-dir <dir>
+```
+
+Use the packet as the working contract for the code change:
+
+- read the selected context files first,
+- inspect only the likely code paths before broad exploration,
+- preserve listed protected rules and user or operations flows,
+- cover required topics in the brief, tests, or review notes,
+- ask before changing policy when code and context disagree.
+
+The prepared Domain Impact Brief should cover:
 
 ```text
 Domain Impact Brief
@@ -119,6 +142,62 @@ When work reveals a new rule or exception, update the knowledge base. Add:
 - date discovered.
 
 Do not overwrite a rule just because code disagrees with it. Treat disagreement as a product question.
+
+### 5. Pilot Evaluation Mode
+
+Use when the user wants to know whether Domain Guardian improves real AI coding outcomes.
+
+Start with low-cost pilots before full implementation A/B:
+
+```bash
+python3 scripts/pilot_eval.py low-cost-init \
+  --mode plan-only \
+  --output docs/domain-guardian/plan-only-scores.json
+
+python3 scripts/pilot_eval.py low-cost-init \
+  --mode review-only \
+  --output docs/domain-guardian/review-only-scores.json
+```
+
+Use plan-only when token budget is tight: ask both agents for an implementation plan only. Use review-only when a representative diff exists: ask both agents to review the same diff without editing.
+
+For a full pilot:
+
+1. Pick 3-10 representative domain-sensitive tasks.
+2. Run each task once without Domain Guardian.
+3. Run the same task again after `scripts/prepare_change.py --task "<task>" --knowledge-dir <dir> --strict`.
+4. Have a human reviewer score both outputs with:
+
+```bash
+python3 scripts/pilot_eval.py init --output docs/domain-guardian/pilot-scores.json
+```
+
+5. Render the aggregate report:
+
+```bash
+python3 scripts/pilot_eval.py report \
+  --input docs/domain-guardian/pilot-scores.json \
+  --output docs/domain-guardian/pilot-report.md
+```
+
+Treat this as a product signal, not a scientific benchmark. The reviewer should score concrete output quality: invariant preservation, relevant context usage, asking when unclear, business-invariant tests, and context updates.
+
+For a stronger pilot, use blind review:
+
+```bash
+python3 scripts/pilot_eval.py blind-init \
+  --review-output docs/domain-guardian/blind-reviewer-1.json \
+  --key-output docs/domain-guardian/blind-key.json
+```
+
+Keep the key away from reviewers. After they score anonymized variant A/B outputs, render:
+
+```bash
+python3 scripts/pilot_eval.py blind-report \
+  --review docs/domain-guardian/blind-reviewer-1.json \
+  --key docs/domain-guardian/blind-key.json \
+  --output docs/domain-guardian/blind-pilot-report.md
+```
 
 ## Decision Rules
 

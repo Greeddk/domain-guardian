@@ -40,6 +40,18 @@ DOMAIN_SENSITIVE_TERMS = {
     "moderation",
 }
 
+HIGH_SIGNAL_TERMS = DOMAIN_SENSITIVE_TERMS - {"cancel", "notification", "state", "transition"}
+LOW_SIGNAL_PATH_PARTS = {
+    "docs/",
+    "fixtures/",
+    "marketing/",
+    "styles/",
+    "test/",
+    "tests/",
+}
+LOW_SIGNAL_EXTENSIONS = {".css", ".md", ".mdx"}
+LOW_SIGNAL_FILENAMES = {"readme.md", "changelog.md", "package.json"}
+
 
 def read_diff(diff_file: str | None) -> str:
     if diff_file:
@@ -102,13 +114,43 @@ def score_entry(entry: dict[str, str], haystack_tokens: set[str], files: list[st
     return score
 
 
+def low_signal_file(file_path: str) -> bool:
+    normalized = file_path.lower()
+    filename = Path(normalized).name
+    return (
+        filename in LOW_SIGNAL_FILENAMES
+        or Path(normalized).suffix in LOW_SIGNAL_EXTENSIONS
+        or any(part in normalized for part in LOW_SIGNAL_PATH_PARTS)
+    )
+
+
+def exact_index_code_match(entry: dict[str, str], files: list[str]) -> bool:
+    code = entry.get("Code", "")
+    return any(file_path in code for file_path in files)
+
+
 def risk_level(diff_text: str, files: list[str], matches: list[tuple[int, dict[str, str]]]) -> str:
     diff_tokens = tokens(diff_text + " " + " ".join(files))
-    if any(term in diff_tokens for term in DOMAIN_SENSITIVE_TERMS) and matches:
+    sensitive_terms = diff_tokens & DOMAIN_SENSITIVE_TERMS
+    high_signal_terms = sensitive_terms & HIGH_SIGNAL_TERMS
+    generic_sensitive_only = bool(sensitive_terms) and not high_signal_terms
+    all_low_signal_files = bool(files) and all(low_signal_file(file_path) for file_path in files)
+    top_score = matches[0][0] if matches else 0
+    exact_code_match = any(exact_index_code_match(entry, files) for _score, entry in matches)
+
+    if all_low_signal_files and not exact_code_match:
+        return "LOW"
+    if matches and top_score >= 8 and (high_signal_terms or (exact_code_match and sensitive_terms)):
         return "HIGH"
+    if matches and top_score >= 8 and generic_sensitive_only:
+        return "MEDIUM"
+    if matches and generic_sensitive_only and not exact_code_match:
+        return "LOW"
+    if matches and top_score < 3 and not high_signal_terms:
+        return "LOW"
     if matches:
         return "MEDIUM"
-    if any(term in diff_tokens for term in DOMAIN_SENSITIVE_TERMS):
+    if high_signal_terms:
         return "MEDIUM"
     return "LOW"
 

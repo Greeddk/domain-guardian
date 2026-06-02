@@ -27,6 +27,44 @@ PLACEHOLDER_MARKERS = [
 ]
 
 
+def split_list(raw_value: str) -> list[str]:
+    backtick_values = re.findall(r"`([^`]+)`", raw_value)
+    if backtick_values:
+        return [value.strip() for value in backtick_values if value.strip()]
+    return [value.strip().strip("` ") for value in raw_value.split(",") if value.strip()]
+
+
+def index_code_paths(index_path: Path) -> list[str]:
+    if not index_path.exists():
+        return []
+    paths: list[str] = []
+    seen: set[str] = set()
+    for raw_line in index_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line.startswith("- Code:"):
+            continue
+        for path in split_list(line.split(":", 1)[1]):
+            if path not in seen:
+                seen.add(path)
+                paths.append(path)
+    return paths
+
+
+def check_index_code_map_coverage(base: Path) -> tuple[bool, list[str]]:
+    index_path = base / "index.md"
+    code_map_path = base / "code-map.md"
+    if not index_path.exists() or not code_map_path.exists():
+        return False, ["missing index.md or code-map.md"]
+
+    code_map_text = code_map_path.read_text(encoding="utf-8")
+    problems = [
+        f"index code path missing from code-map: {path}"
+        for path in index_code_paths(index_path)
+        if path not in code_map_text
+    ]
+    return not problems, problems
+
+
 def score_file(path: Path) -> tuple[bool, list[str]]:
     problems: list[str] = []
     if not path.exists():
@@ -76,6 +114,13 @@ def main() -> int:
         for problem in problems:
             print(f"  - {problem}")
         failed = failed or not ok
+
+    ok, problems = check_index_code_map_coverage(base)
+    status = "OK" if ok else "NEEDS WORK"
+    print(f"{status}: index-code-map coverage")
+    for problem in problems:
+        print(f"  - {problem}")
+    failed = failed or not ok
 
     if failed:
         print("\nDomain Guardian context is not ready enough for unsupervised domain-sensitive edits.")
