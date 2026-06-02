@@ -1,6 +1,6 @@
 {
   "name": "domain-guardian",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Keeps AI coding agents grounded in project-specific business rules, user flows, and operational context.",
   "author": {
     "name": "GreedDK",
@@ -19,7 +19,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Domain Guardian",
-    "shortDescription": "Prevent context-blind code changes.",
+    "shortDescription": "Surface context-blind code risks.",
     "longDescription": "Domain Guardian gives Codex a structured project memory for business models, domain rules, critical user flows, operational context, and code ownership boundaries. It guides agents to ask onboarding questions, create a domain impact brief before edits, and review diffs against the rules behind the code.",
     "developerName": "GreedDK",
     "category": "Productivity",

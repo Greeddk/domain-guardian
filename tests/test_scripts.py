@@ -155,6 +155,111 @@ class ScriptTests(unittest.TestCase):
         self.assertIn("Skipped for LOW risk", low_risk.stdout)
         self.assertNotIn("settled paid appointment cannot be patient-cancelled directly", low_risk.stdout)
 
+    def test_domain_brief_low_confidence_does_not_invent_context(self) -> None:
+        result = self.run_script(
+            "scripts/domain_brief.py",
+            "--task",
+            "Update homepage marketing copy",
+            "--knowledge-dir",
+            "examples/clinic-scheduling/.domain-guardian",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertIn("Confidence: LOW", result.stdout)
+        self.assertIn("No strong index match", result.stdout)
+        self.assertNotIn("settled paid appointment cannot be patient-cancelled directly", result.stdout)
+
+    def test_check_brief_requires_index_topics_when_provided(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            brief = Path(tmp) / "generic.md"
+            brief.write_text(
+                """# Domain Impact Brief
+
+## Relevant Business Context
+- Generic context
+
+## Relevant Business Rules
+- Generic rule
+
+## Relevant User Or Operations Flows
+- Generic flow
+
+## Code Areas Likely Involved
+- Generic code
+
+## Protected Invariants
+- Generic invariant
+
+## Ambiguities Or Questions
+- Generic question
+
+## Test Or Review Guardrails
+- Generic guardrail
+- Extra bullet
+- Extra bullet
+- Extra bullet
+""",
+                encoding="utf-8",
+            )
+            result = self.run_script(
+                "scripts/check_brief.py",
+                str(brief),
+                "--required-topic",
+                "refund side effect",
+                "--required-topic",
+                "audit event",
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("missing required topic: refund side effect", result.stdout)
+            self.assertIn("missing required topic: audit event", result.stdout)
+
+    def test_analyze_diff_validates_required_topics_from_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            diff_path = Path(tmp) / "change.diff"
+            diff_path.write_text(SAMPLE_DIFF, encoding="utf-8")
+            generic_brief = Path(tmp) / "generic.md"
+            generic_brief.write_text(
+                """# Domain Impact Brief
+
+## Relevant Business Context
+- Generic context
+
+## Relevant Business Rules
+- Generic rule
+
+## Relevant User Or Operations Flows
+- Generic flow
+
+## Code Areas Likely Involved
+- Generic code
+
+## Protected Invariants
+- Generic invariant
+
+## Ambiguities Or Questions
+- Generic question
+
+## Test Or Review Guardrails
+- Generic guardrail
+- Extra bullet
+- Extra bullet
+- Extra bullet
+""",
+                encoding="utf-8",
+            )
+            result = self.run_script(
+                "scripts/analyze_diff.py",
+                "--diff-file",
+                str(diff_path),
+                "--knowledge-dir",
+                "examples/clinic-scheduling/.domain-guardian",
+                "--require-brief",
+                "--brief",
+                str(generic_brief),
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Confidence: HIGH", result.stdout)
+            self.assertIn("missing required topic", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

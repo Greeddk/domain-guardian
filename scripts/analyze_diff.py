@@ -9,7 +9,14 @@ import re
 import sys
 
 from check_brief import validate_brief
-from domain_brief import find_context_dir, ranked_lines, read_context, tokens
+from domain_brief import (
+    confidence_for_score,
+    find_context_dir,
+    ranked_lines,
+    read_context,
+    split_topics,
+    tokens,
+)
 
 
 DOMAIN_SENSITIVE_TERMS = {
@@ -106,6 +113,24 @@ def risk_level(diff_text: str, files: list[str], matches: list[tuple[int, dict[s
     return "LOW"
 
 
+def required_topics_from_matches(matches: list[tuple[int, dict[str, str]]]) -> list[str]:
+    topics: list[str] = []
+    seen: set[str] = set()
+    if not matches:
+        return topics
+    top_score = matches[0][0]
+    required_threshold = max(8, top_score - 3)
+    for score, entry in matches:
+        if score < required_threshold:
+            continue
+        for topic in split_topics(entry.get("Required brief topics", "")):
+            normalized = topic.lower()
+            if normalized not in seen:
+                seen.add(normalized)
+                topics.append(topic)
+    return topics
+
+
 def render_report(
     *,
     diff_text: str,
@@ -124,6 +149,7 @@ def render_report(
     )
     matches = [(score, entry) for score, entry in scored if score > 0][:5]
     level = risk_level(diff_text, files, matches)
+    confidence = confidence_for_score(matches[0][0] if matches else 0)
 
     exit_code = 0
     lines: list[str] = [
@@ -131,6 +157,7 @@ def render_report(
         "",
         f"- Context directory: {context_dir}",
         f"- Risk level: {level}",
+        f"- Confidence: {confidence}",
         f"- Changed files: {', '.join(files) if files else 'none detected'}",
     ]
 
@@ -168,7 +195,7 @@ def render_report(
             lines.append("- NEEDS WORK: --require-brief was set but --brief was not provided.")
             exit_code = 1
         else:
-            problems = validate_brief(Path(brief))
+            problems = validate_brief(Path(brief), required_topics_from_matches(matches))
             if problems:
                 lines.append("- NEEDS WORK: Domain Impact Brief")
                 lines.extend(f"  - {problem}" for problem in problems)

@@ -24,12 +24,15 @@
 - One appointment can have at most one active payment intent.
 - A settled paid appointment cannot be patient-cancelled directly.
 - Patient cancellation creates a cancellation request when payment is settled.
+- Allowed transition: settled appointments can move to `cancellation_requested`.
+- Forbidden transition: settled appointments must not move directly to `cancelled` by patient action.
 
 ## Relevant User Or Operations Flows
 
 - Paid appointment booking must avoid duplicate charges.
 - Cancellation request for settled appointment notifies clinic staff.
 - Stripe webhooks can be delayed, duplicated, or delivered out of order.
+- Actor: patient starts the request; clinic staff reviews the final refund or credit action.
 
 ## Code Areas Likely Involved
 
@@ -43,6 +46,7 @@
 - Do not allow direct patient cancellation of settled paid appointments.
 - Preserve appointment and payment audit history.
 - Keep payment webhook handling idempotent.
+- Preserve side effects: staff notification, audit event, and refund review state.
 
 ## Ambiguities Or Questions
 

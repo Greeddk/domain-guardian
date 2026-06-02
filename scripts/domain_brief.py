@@ -97,6 +97,57 @@ def ranked_lines(task: str, lines: Iterable[str], limit: int = 6) -> list[str]:
     return selected[:limit] if selected else ["- No concrete context captured yet."]
 
 
+def extract_index_entries(index_path: Path) -> list[dict[str, str]]:
+    if not index_path.exists():
+        return []
+    entries: list[dict[str, str]] = []
+    current: dict[str, str] | None = None
+    for raw_line in index_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line.startswith("- Area:"):
+            if current:
+                entries.append(current)
+            current = {"Area": line.split(":", 1)[1].strip()}
+            continue
+        if current is not None and line.startswith("- ") and ":" in line:
+            key, value = line[2:].split(":", 1)
+            current[key.strip()] = value.strip()
+    if current:
+        entries.append(current)
+    return entries
+
+
+def score_index_entry(entry: dict[str, str], haystack: str) -> int:
+    haystack_tokens = tokens(haystack)
+    score = 0
+    score += len(tokens(entry.get("Area", "")) & haystack_tokens) * 4
+    score += len(tokens(entry.get("Keywords", "")) & haystack_tokens) * 3
+    score += len(tokens(entry.get("Code", "")) & haystack_tokens) * 2
+    return score
+
+
+def confidence_for_score(score: int) -> str:
+    if score >= 8:
+        return "HIGH"
+    if score >= 3:
+        return "MEDIUM"
+    return "LOW"
+
+
+def split_topics(raw_topics: str) -> list[str]:
+    return [topic.strip().strip(".") for topic in raw_topics.split(",") if topic.strip()]
+
+
+def matched_index_entries(task: str, context_dir: Path, limit: int = 3) -> list[tuple[int, dict[str, str]]]:
+    entries = extract_index_entries(context_dir / "index.md")
+    scored = sorted(
+        [(score_index_entry(entry, task), entry) for entry in entries],
+        key=lambda item: item[0],
+        reverse=True,
+    )
+    return [(score, entry) for score, entry in scored if score > 0][:limit]
+
+
 def read_context(context_dir: Path) -> dict[str, list[str]]:
     context: dict[str, list[str]] = {}
     for filename in REQUIRED_FILES:
@@ -114,11 +165,26 @@ def pick(lines: Iterable[str], limit: int = 5) -> list[str]:
 
 
 def render_brief(task: str, context_dir: Path, context: dict[str, list[str]]) -> str:
-    index = ranked_lines(task, context["index.md"], limit=8)
-    rules = ranked_lines(task, context["domain-rules.md"])
-    flows = ranked_lines(task, context["user-flows.md"] + context["operational-context.md"])
-    code = ranked_lines(task, context["code-map.md"])
-    business = ranked_lines(task, context["business-model.md"], limit=4)
+    matches = matched_index_entries(task, context_dir)
+    top_score = matches[0][0] if matches else 0
+    confidence = confidence_for_score(top_score)
+    if confidence == "LOW":
+        index = ["- No strong index match. Ask the user or inspect code before pulling domain rules into the brief."]
+        rules = ["- Skipped for LOW confidence: no strong index match."]
+        flows = ["- Skipped for LOW confidence."]
+        code = ["- Skipped for LOW confidence."]
+        business = ranked_lines(task, context["business-model.md"], limit=4)
+    else:
+        index = []
+        for score, entry in matches:
+            index.append(f"- Area: {entry.get('Area', 'Unnamed area')} (score {score})")
+            for key in ("Owners", "Risk", "Read", "Code", "Required brief topics"):
+                if entry.get(key):
+                    index.append(f"  - {key}: {entry[key]}")
+        rules = ranked_lines(task, context["domain-rules.md"])
+        flows = ranked_lines(task, context["user-flows.md"] + context["operational-context.md"])
+        code = ranked_lines(task, context["code-map.md"])
+        business = ranked_lines(task, context["business-model.md"], limit=4)
 
     def bullet_block(items: list[str]) -> str:
         return "\n".join(items)
@@ -128,6 +194,7 @@ def render_brief(task: str, context_dir: Path, context: dict[str, list[str]]) ->
 - Date: {date.today().isoformat()}
 - Task: {task}
 - Context directory: {context_dir}
+- Confidence: {confidence}
 
 ## Relevant Business Context
 
